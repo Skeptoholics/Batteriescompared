@@ -52,6 +52,7 @@
     font-family:'IBM Plex Mono',monospace}
   input:focus,select:focus{outline:none;border-color:var(--accent);
     box-shadow:0 0 0 3px var(--accent-soft)}
+  input::placeholder{color:var(--faint);font-style:italic;opacity:1}
   select{font-family:'IBM Plex Sans',sans-serif}
 
   .out{margin-top:26px;background:var(--surface);border:1px solid var(--line);
@@ -156,6 +157,13 @@
     color:var(--muted);padding:8px 14px;margin-bottom:-1px}
   .tab.on{color:var(--ink);border-bottom-color:var(--accent)}
   .loadecho{font-size:11px;color:var(--muted);margin-bottom:14px}
+  .exrow{display:flex;gap:8px;margin:0 0 18px}
+  .exrow button{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+    padding:7px 14px;border:1px solid var(--line-strong);background:transparent;border-radius:7px;cursor:pointer;color:var(--muted)}
+  .exrow button:hover{border-color:var(--accent);color:var(--accent)}
+  .emptyState{padding:40px 24px;text-align:center;color:var(--muted);font-size:15px;line-height:1.6}
+  .emptyState button{font:inherit;color:var(--accent);background:none;border:none;border-bottom:1px solid var(--accent);
+    padding:0 1px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -190,6 +198,11 @@
     <button class="tab" data-tab="ev">EV range</button>
   </div>
 
+  <div class="exrow" id="exrow">
+    <button type="button" id="loadEx">Load example</button>
+    <button type="button" id="clearAll">Clear all</button>
+  </div>
+
   <div class="grid" id="inputs"></div>
 
   <div class="out" id="comparePanel">
@@ -200,6 +213,7 @@
         <button data-v="detailed">Detailed</button>
       </div>
     </div>
+    <div class="emptyState" id="emptyState" hidden>Enter both batteries to compare, or <button type="button" id="loadExBtn">load an example</button> to see how it works.</div>
     <div class="calcnote">Every figure below is calculated from unverified, user-supplied data.</div>
     <div class="headline" id="headline"></div>
     <table>
@@ -327,7 +341,7 @@ const FIELDS=[
   ['cyc80','Cycle life @80%','num'],['massKg','Mass kg','num'],
   ['dims','Dimensions L×W×H mm','dims']
 ];
-const state={
+const DEMO={
   A:{name:'Battery 1',partNo:'FX-3000',mfgDate:'2024-03',genericName:'12V 300Ah LFP',chemistry:'lifepo4',
      nominalV:12.8,fullChargeV:14.8,cutoutV:9.0,
      capVal:3840,capUnit:'Wh',
@@ -341,6 +355,11 @@ const state={
      cyc80:5000,massKg:26.3,L:384,W:194,H:252,
      country:'Australia',price:'AUD 749',url:''}
 };
+function blankBattery(){return{name:'',partNo:'',mfgDate:'',genericName:'',chemistry:'lifepo4',
+  nominalV:null,fullChargeV:null,cutoutV:null,capVal:null,capUnit:'Wh',
+  capacityBasis:'nameplate',dodPct:80,maxContDischargeA:null,peakA:null,peakSec:null,
+  cyc80:null,massKg:null,L:null,W:null,H:null,country:'',price:'',url:''};}
+const state={A:blankBattery(),B:blankBattery()};
 
 function fieldHTML(side,s){
   const chemOpts=Object.keys(CHEMISTRY).map(k=>`<option value="${k}" ${s.chemistry===k?'selected':''}>${k}</option>`).join('');
@@ -353,12 +372,12 @@ function fieldHTML(side,s){
    <div class="field"><label>Generic name</label><input data-s="${side}" data-k="genericName" value="${esc(s.genericName)}" placeholder="e.g. 12V 300Ah LFP"></div>
    <div class="field"><label>Chemistry</label><select data-s="${side}" data-k="chemistry">${chemOpts}</select></div>
    <div class="row3">
-     <div class="field"><label>Nominal V</label><input class="num" data-s="${side}" data-k="nominalV" type="number" value="${s.nominalV}"></div>
-     <div class="field"><label>Full-charge V</label><input class="num" data-s="${side}" data-k="fullChargeV" type="number" value="${s.fullChargeV??''}"></div>
-     <div class="field"><label>Cut-out V</label><input class="num" data-s="${side}" data-k="cutoutV" type="number" value="${s.cutoutV??''}"></div>
+     <div class="field"><label>Nominal V</label><input class="num" data-s="${side}" data-k="nominalV" type="number" value="${s.nominalV??''}" placeholder="e.g. 12.8"></div>
+     <div class="field"><label>Full-charge V</label><input class="num" data-s="${side}" data-k="fullChargeV" type="number" value="${s.fullChargeV??''}" placeholder="e.g. 14.6"></div>
+     <div class="field"><label>Cut-out V</label><input class="num" data-s="${side}" data-k="cutoutV" type="number" value="${s.cutoutV??''}" placeholder="e.g. 10"></div>
    </div>
    <div class="row2">
-     <div class="field"><label>Capacity · as labelled</label><input class="num" data-s="${side}" data-k="capVal" type="number" value="${s.capVal??''}" placeholder="number on the battery"></div>
+     <div class="field"><label>Capacity · as labelled</label><input class="num" data-s="${side}" data-k="capVal" type="number" value="${s.capVal??''}" placeholder="e.g. 300"></div>
      <div class="field"><label>Unit</label><select data-s="${side}" data-k="capUnit"><option ${s.capUnit==='Wh'?'selected':''}>Wh</option><option ${s.capUnit==='Ah'?'selected':''}>Ah</option><option ${s.capUnit==='mAh'?'selected':''}>mAh</option></select></div>
    </div>
    <div class="row2">
@@ -368,19 +387,19 @@ function fieldHTML(side,s){
        : `<div class="field"><label>Usable DoD % · assumed, editable</label><input class="num" data-s="${side}" data-k="dodPct" type="number" value="${s.dodPct}"></div>`}
    </div>
    <div class="row2">
-     <div class="field"><label>Max cont. discharge A</label><input class="num" data-s="${side}" data-k="maxContDischargeA" type="number" value="${s.maxContDischargeA}"></div>
-     <div class="field"><label>Cycle life @80%</label><input class="num" data-s="${side}" data-k="cyc80" type="number" value="${s.cyc80}"></div>
+     <div class="field"><label>Max cont. discharge A</label><input class="num" data-s="${side}" data-k="maxContDischargeA" type="number" value="${s.maxContDischargeA??''}" placeholder="e.g. 100"></div>
+     <div class="field"><label>Cycle life @80%</label><input class="num" data-s="${side}" data-k="cyc80" type="number" value="${s.cyc80??''}" placeholder="e.g. 4000"></div>
    </div>
    <div class="row2">
-     <div class="field"><label>Peak current A</label><input class="num" data-s="${side}" data-k="peakA" type="number" value="${s.peakA}"></div>
-     <div class="field"><label>Peak duration s</label><input class="num" data-s="${side}" data-k="peakSec" type="number" value="${s.peakSec}"></div>
+     <div class="field"><label>Peak current A</label><input class="num" data-s="${side}" data-k="peakA" type="number" value="${s.peakA??''}" placeholder="e.g. 200"></div>
+     <div class="field"><label>Peak duration s</label><input class="num" data-s="${side}" data-k="peakSec" type="number" value="${s.peakSec??''}" placeholder="e.g. 5"></div>
    </div>
    <div class="row3">
-     <div class="field"><label>Length mm</label><input class="num" data-s="${side}" data-k="L" type="number" value="${s.L}"></div>
-     <div class="field"><label>Width mm</label><input class="num" data-s="${side}" data-k="W" type="number" value="${s.W}"></div>
-     <div class="field"><label>Height mm</label><input class="num" data-s="${side}" data-k="H" type="number" value="${s.H}"></div>
+     <div class="field"><label>Length mm</label><input class="num" data-s="${side}" data-k="L" type="number" value="${s.L??''}" placeholder="e.g. 370"></div>
+     <div class="field"><label>Width mm</label><input class="num" data-s="${side}" data-k="W" type="number" value="${s.W??''}" placeholder="e.g. 190"></div>
+     <div class="field"><label>Height mm</label><input class="num" data-s="${side}" data-k="H" type="number" value="${s.H??''}" placeholder="e.g. 250"></div>
    </div>
-   <div class="field"><label>Mass kg</label><input class="num" data-s="${side}" data-k="massKg" type="number" value="${s.massKg}"></div>
+   <div class="field"><label>Mass kg</label><input class="num" data-s="${side}" data-k="massKg" type="number" value="${s.massKg??''}" placeholder="e.g. 25"></div>
    <div class="srcgroup">
      <div class="row2">
        <div class="field"><label>Country found</label><input data-s="${side}" data-k="country" value="${esc(s.country)}" placeholder="e.g. Australia"></div>
@@ -433,6 +452,11 @@ const capLabelled=g=> g.capVal!=null ? (f(g.capVal)+' '+g.capUnit) : '\u2014';
 
 function render(){
   const A=toEngine(state.A), B=toEngine(state.B);
+  const bothEmpty = A.usableWh==null && B.usableWh==null;
+  const cp=document.getElementById('comparePanel');
+  document.getElementById('emptyState').hidden = !bothEmpty;
+  ['.calcnote','.headline','table','.feas'].forEach(sel=>{const el=cp.querySelector(sel); if(el) el.style.display = bothEmpty?'none':'';});
+  if(bothEmpty){ document.getElementById('rows').innerHTML=''; return; }
   document.getElementById('hA').textContent=A.name||'Battery A';
   document.getElementById('hB').textContent=B.name||'Battery B';
   document.getElementById('class-A').textContent=deriveClass(A);
@@ -557,6 +581,7 @@ document.querySelectorAll('.tab').forEach(tab=>{
     tab.classList.add('on');
     const t=tab.dataset.tab;
     document.getElementById('inputs').classList.toggle('hidden', t==='ev');
+    document.getElementById('exrow').classList.toggle('hidden', t==='ev');
     document.getElementById('comparePanel').classList.toggle('hidden', t!=='compare');
     document.getElementById('longevityPanel').classList.toggle('hidden', t!=='longevity');
     document.getElementById('evPanel').classList.toggle('hidden', t!=='ev');
@@ -608,6 +633,12 @@ document.querySelectorAll('#evUnit button').forEach(b=>{
   });
 });
 renderEV();
+
+function fillExample(){ state.A={...DEMO.A}; state.B={...DEMO.B}; buildInputs(); render(); }
+function clearAll(){ state.A=blankBattery(); state.B=blankBattery(); buildInputs(); render(); }
+document.getElementById('loadEx').addEventListener('click',fillExample);
+document.getElementById('clearAll').addEventListener('click',clearAll);
+document.getElementById('loadExBtn').addEventListener('click',fillExample);
 
 buildInputs(); render();
 
