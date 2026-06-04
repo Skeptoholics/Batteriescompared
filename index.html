@@ -47,6 +47,28 @@
     margin-bottom:4px;text-transform:uppercase;font-weight:500}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .cardgrid{display:grid;grid-template-columns:1fr 1fr;gap:13px 14px;align-items:end}
+  .cardgrid .field{margin:0}
+  .cardgrid .field label{min-height:2.4em}
+  .field-span{grid-column:1 / -1}
+  .dims3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .caprow{display:flex;gap:8px}
+  .caprow .capval{flex:2}
+  .caprow .capunit{flex:1;min-width:62px}
+  .caprow .capbasis{flex:1.5;min-width:100px}
+  .dodrow{display:flex;align-items:center;gap:10px;margin-top:8px}
+  .dodrow .inlinelbl{margin:0;min-height:0;display:inline-flex;align-items:center;white-space:nowrap}
+  .dodrow .dodval{max-width:88px}
+  .info-btn{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
+    margin-left:5px;padding:0;border:1px solid var(--line-strong);border-radius:50%;background:none;
+    color:var(--muted);font-family:Georgia,serif;font-style:italic;font-size:10px;line-height:1;
+    cursor:pointer;vertical-align:middle;text-transform:none}
+  .info-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .info-pop{position:fixed;z-index:300;max-width:300px;background:var(--surface);
+    border:1px solid var(--line-strong);border-radius:10px;box-shadow:var(--shadow);
+    padding:13px 15px;font-size:12.5px;line-height:1.5;color:var(--ink);font-family:'IBM Plex Sans',sans-serif}
+  .info-pop strong{display:block;margin-bottom:5px;font-family:'Fraunces',serif;font-size:13.5px;text-transform:none;letter-spacing:0}
+  .info-pop.hidden{display:none}
   input,select{width:100%;background:var(--surface-2);border:1px solid var(--line-strong);
     border-radius:8px;padding:8px 10px;font-size:13px;color:var(--ink);
     font-family:'IBM Plex Mono',monospace}
@@ -207,6 +229,7 @@
     </div>
   </div>
 </div>
+<div class="info-pop hidden" id="infoPop"></div>
 <div class="wrap">
   <header>
     <div class="kicker">Batteries Compared</div>
@@ -422,49 +445,31 @@ let revealedSol=false;
 
 function fieldHTML(side,s){
   const chemOpts=Object.keys(CHEMISTRY).map(k=>`<option value="${k}" ${s.chemistry===k?'selected':''}>${k}</option>`).join('');
+  const lbl=(t,key)=>`<label>${t}<button type="button" class="info-btn" data-info="${key}" aria-label="Explain: ${t}">i</button></label>`;
   return `
-   <div class="field"><label>Manufacturer name · required</label><input data-s="${side}" data-k="name" value="${esc(s.name)}" placeholder="maker / brand"></div>
-   <div class="row2">
-     <div class="field"><label>Part number</label><input data-s="${side}" data-k="partNo" value="${esc(s.partNo)}" placeholder="model / SKU"></div>
-     <div class="field"><label>Mfg date (yr-mo)</label><input type="month" data-s="${side}" data-k="mfgDate" value="${s.mfgDate||''}"></div>
-   </div>
-   <div class="field"><label>Generic name</label><input data-s="${side}" data-k="genericName" value="${esc(s.genericName)}" placeholder="short description"></div>
-   <div class="field"><label>Chemistry</label><select data-s="${side}" data-k="chemistry">${chemOpts}</select></div>
-   <div class="row3">
-     <div class="field"><label>Nominal V</label><input class="num" data-s="${side}" data-k="nominalV" type="number" value="${s.nominalV??''}" placeholder="volts"></div>
-     <div class="field"><label>Full-charge V</label><input class="num" data-s="${side}" data-k="fullChargeV" type="number" value="${s.fullChargeV??''}" placeholder="volts"></div>
-     <div class="field"><label>Cut-out V</label><input class="num" data-s="${side}" data-k="cutoutV" type="number" value="${s.cutoutV??''}" placeholder="volts"></div>
-   </div>
-   <div class="row2">
-     <div class="field"><label>Capacity · as labelled</label><input class="num" data-s="${side}" data-k="capVal" type="number" value="${s.capVal??''}" placeholder="as labelled"></div>
-     <div class="field"><label>Unit</label><select data-s="${side}" data-k="capUnit"><option ${s.capUnit==='Wh'?'selected':''}>Wh</option><option ${s.capUnit==='Ah'?'selected':''}>Ah</option><option ${s.capUnit==='mAh'?'selected':''}>mAh</option></select></div>
-   </div>
-   <div class="row2">
-     <div class="field"><label>Capacity basis</label><select data-s="${side}" data-k="capacityBasis"><option value="nameplate" ${s.capacityBasis==='nameplate'?'selected':''}>nameplate</option><option value="usable" ${s.capacityBasis==='usable'?'selected':''}>usable</option></select></div>
-     ${s.capacityBasis==='usable'
-       ? `<div class="field"><label>Usable DoD % · not used (capacity is usable)</label><input class="num" type="number" value="${s.dodPct}" disabled></div>`
-       : `<div class="field"><label>Usable DoD % · assumed, editable</label><input class="num" data-s="${side}" data-k="dodPct" type="number" value="${s.dodPct}"></div>`}
-   </div>
-   <div class="row2">
-     <div class="field"><label>Max cont. discharge A</label><input class="num" data-s="${side}" data-k="maxContDischargeA" type="number" value="${s.maxContDischargeA??''}" placeholder="amps"></div>
-     <div class="field"><label>Cycle life @80%</label><input class="num" data-s="${side}" data-k="cyc80" type="number" value="${s.cyc80??''}" placeholder="cycles"></div>
-   </div>
-   <div class="row2">
-     <div class="field"><label>Peak current A</label><input class="num" data-s="${side}" data-k="peakA" type="number" value="${s.peakA??''}" placeholder="amps"></div>
-     <div class="field"><label>Peak duration s</label><input class="num" data-s="${side}" data-k="peakSec" type="number" value="${s.peakSec??''}" placeholder="seconds"></div>
-   </div>
-   <div class="row3">
-     <div class="field"><label>Length mm</label><input class="num" data-s="${side}" data-k="L" type="number" value="${s.L??''}" placeholder="mm"></div>
-     <div class="field"><label>Width mm</label><input class="num" data-s="${side}" data-k="W" type="number" value="${s.W??''}" placeholder="mm"></div>
-     <div class="field"><label>Height mm</label><input class="num" data-s="${side}" data-k="H" type="number" value="${s.H??''}" placeholder="mm"></div>
-   </div>
-   <div class="field"><label>Mass kg</label><input class="num" data-s="${side}" data-k="massKg" type="number" value="${s.massKg??''}" placeholder="kg"></div>
-   <div class="srcgroup">
-     <div class="row2">
-       <div class="field"><label>Country found</label><input data-s="${side}" data-k="country" value="${esc(s.country)}" placeholder="country"></div>
-       <div class="field"><label>Price found</label><input data-s="${side}" data-k="price" value="${esc(s.price)}" placeholder="as found"></div>
+   <div class="cardgrid">
+     <div class="field">${lbl('Battery composition or type','type')}<select data-s="${side}" data-k="chemistry">${chemOpts}</select></div>
+     <div class="field">${lbl('Nominal V','nominalV')}<input class="num" data-s="${side}" data-k="nominalV" type="number" value="${s.nominalV??''}" placeholder="volts"></div>
+     <div class="field field-span">${lbl('Capacity','capacity')}
+       <div class="caprow">
+         <input class="num capval" data-s="${side}" data-k="capVal" type="number" value="${s.capVal??''}" placeholder="number">
+         <select class="capunit" data-s="${side}" data-k="capUnit"><option ${s.capUnit==='Wh'?'selected':''}>Wh</option><option ${s.capUnit==='Ah'?'selected':''}>Ah</option><option ${s.capUnit==='mAh'?'selected':''}>mAh</option></select>
+         <select class="capbasis" data-s="${side}" data-k="capacityBasis"><option value="nameplate" ${s.capacityBasis==='nameplate'?'selected':''}>as labelled</option><option value="usable" ${s.capacityBasis==='usable'?'selected':''}>usable</option></select>
+       </div>
+       ${s.capacityBasis==='usable' ? ''
+         : `<div class="dodrow"><label class="inlinelbl">Usable DoD %<button type="button" class="info-btn" data-info="dod" aria-label="Explain Depth of Discharge">i</button></label><input class="num dodval" data-s="${side}" data-k="dodPct" type="number" value="${s.dodPct}"></div>`}
      </div>
-     <div class="field"><label>Source link (mfr / retailer)</label><input data-s="${side}" data-k="url" value="${esc(s.url)}" placeholder="https://..."></div>
+     <div class="field">${lbl('Max continuous A','maxContA')}<input class="num" data-s="${side}" data-k="maxContDischargeA" type="number" value="${s.maxContDischargeA??''}" placeholder="amps"></div>
+     <div class="field">${lbl('Mass kg','mass')}<input class="num" data-s="${side}" data-k="massKg" type="number" value="${s.massKg??''}" placeholder="kg"></div>
+     <div class="field">${lbl('Peak current A','peak')}<input class="num" data-s="${side}" data-k="peakA" type="number" value="${s.peakA??''}" placeholder="amps"></div>
+     <div class="field">${lbl('Peak duration s','peak')}<input class="num" data-s="${side}" data-k="peakSec" type="number" value="${s.peakSec??''}" placeholder="seconds"></div>
+     <div class="field field-span">${lbl('Dimensions L × W × H (mm)','dims')}
+       <div class="dims3">
+         <input class="num" data-s="${side}" data-k="L" type="number" value="${s.L??''}" placeholder="length">
+         <input class="num" data-s="${side}" data-k="W" type="number" value="${s.W??''}" placeholder="width">
+         <input class="num" data-s="${side}" data-k="H" type="number" value="${s.H??''}" placeholder="height">
+       </div>
+     </div>
    </div>`;
 }
 
@@ -477,7 +482,7 @@ function buildInputs(){
     el.addEventListener('input',e=>{
       const {s,k}=e.target.dataset;
       let val=e.target.value;
-      if(['nominalV','fullChargeV','cutoutV','capVal','dodPct','maxContDischargeA','peakA','peakSec','cyc80','massKg','L','W','H'].includes(k))
+      if(['nominalV','capVal','dodPct','maxContDischargeA','peakA','peakSec','massKg','L','W','H'].includes(k))
         val=val===''?null:parseFloat(val);
       state[s][k]=val;
       revealed=false;
@@ -509,16 +514,6 @@ function toEngine(s){
 }
 const f=(x,d=0)=> x==null?'—':(Math.round(x*Math.pow(10,d))/Math.pow(10,d)).toLocaleString();
 const capLabelled=g=> g.capVal!=null ? (f(g.capVal)+' '+g.capUnit) : '\u2014';
-function ageFrom(m){
-  if(!m||!/^\d{4}-\d{2}$/.test(m)) return '\u2014';
-  const [y,mo]=m.split('-').map(Number);
-  const now=new Date();
-  let months=(now.getFullYear()-y)*12+(now.getMonth()+1-mo);
-  if(months<0) return '\u2014';
-  if(months<1) return '<1 mo';
-  const yr=Math.floor(months/12), rem=months%12;
-  return ((yr?yr+' yr ':'')+(rem?rem+' mo':(yr?'':'0 mo'))).trim();
-}
 
 function render(){
   const A=toEngine(state.A), B=toEngine(state.B);
@@ -554,22 +549,13 @@ function render(){
   const baseA=v=> v==null?'\u2014':'1.00';
   const powA=A.nominalV!=null&&A.maxContDischargeA!=null?A.nominalV*A.maxContDischargeA:null;
   const powB=B.nominalV!=null&&B.maxContDischargeA!=null?B.nominalV*B.maxContDischargeA:null;
-  const linkCell=u=> !u?'\u2014':(/^https?:\/\//i.test(u)
-      ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer" class="tlink">open \u2197</a>` : esc(u));
   const rows=[
     ['Nominal V', f(A.nominalV,1), f(B.nominalV,1), false],
-    ['Full-charge V', f(A.fullChargeV,1), f(B.fullChargeV,1), false],
-    ['Cut-out V', f(A.cutoutV,1), f(B.cutoutV,1), false],
     ['Usable Wh'+mm, f(A.usableWh), f(B.usableWh), false],
     ['Max cont. discharge A', f(A.maxContDischargeA), f(B.maxContDischargeA), false],
     ['Peak — current A', f(A.peakA), f(B.peakA), false],
     ['Peak — duration s', f(A.peakSec,1), f(B.peakSec,1), false],
-    ['Cycle life @80%', f(A.cyc80), f(B.cyc80), false],
     // detailed
-    ['Part number', esc(A.partNo)||'\u2014', esc(B.partNo)||'\u2014', true],
-    ['Mfg date', esc(A.mfgDate)||'\u2014', esc(B.mfgDate)||'\u2014', true],
-    ['Age (from mfg date)', ageFrom(A.mfgDate), ageFrom(B.mfgDate), true],
-    ['Generic name (typed)', esc(A.genericName)||'\u2014', esc(B.genericName)||'\u2014', true],
     ['Class (derived)', deriveClass(A), deriveClass(B), true],
     ['Capacity as labelled', capLabelled(A), capLabelled(B), true],
     ['Nameplate Wh', f(A.nameplateWh), f(B.nameplateWh), true],
@@ -583,9 +569,6 @@ function render(){
     ['Mass kg', f(A.massKg,1), f(B.massKg,1), true],
     ['Units to equal one A · energy'+mm, baseA(A.usableWh), units(A.usableWh,B.usableWh), true],
     ['Units to equal one A · continuous power', baseA(powA), units(powA,powB), true],
-    ['Country found', esc(A.country)||'\u2014', esc(B.country)||'\u2014', true],
-    ['Price found', esc(A.price)||'\u2014', esc(B.price)||'\u2014', true],
-    ['Source link', linkCell(A.url), linkCell(B.url), true],
   ];
   document.getElementById('rows').innerHTML=rows.map(([m,a,b,det])=>
     `<tr class="${det?'detail':''}"><td class="metric">${m}</td><td class="v">${a}</td><td class="v">${b}</td></tr>`).join('');
@@ -799,6 +782,40 @@ buildInputs(); render();
     if(open){ body.removeAttribute('hidden'); t.setAttribute('aria-expanded','true'); }
     else { body.setAttribute('hidden',''); t.setAttribute('aria-expanded','false'); }
   });
+})();
+/* ---------- FIELD INFO POPOVERS ---------- */
+(function(){
+  const pop=document.getElementById('infoPop');
+  const INFO={
+    type:'<strong>Battery composition or type</strong>The chemistry of the cells — e.g. LiFePO4 (lithium iron phosphate), Li-ion, or lead-acid. We use it to pre-fill a sensible Depth of Discharge for you (which you can change), and to name the battery\u2019s class in the results.',
+    nominalV:'<strong>Nominal voltage (V)</strong>The battery\u2019s rated working voltage, printed on the label \u2014 e.g. 12.8&nbsp;V for a 12&nbsp;V LiFePO4. We use it to convert amp-hours into watt-hours, and to work out continuous power.',
+    capacity:'<strong>Capacity</strong>How much the battery holds, exactly as printed on the label. Enter the number, then choose the unit: <b>Wh</b> (watt-hours \u2014 energy), <b>Ah</b> (amp-hours \u2014 charge), or <b>mAh</b> (1000&nbsp;mAh = 1&nbsp;Ah). If you use Ah or mAh, we convert to energy using your nominal voltage.',
+    basis:'<strong>As labelled vs usable</strong>Is the capacity you typed the <b>label</b> figure (the full nameplate number) or the <b>usable</b> figure (what you can actually draw)? Most labels quote nameplate. Choose \u201Cas labelled\u201D and we apply Depth of Discharge to find usable energy. Choose \u201Cusable\u201D only if the maker already quoted the usable number.',
+    dod:'<strong>DoD \u2014 Depth of Discharge</strong>The share of the battery you can safely use before recharging. LiFePO4 is typically ~80\u201390%; lead-acid ~50%. Example: a 100&nbsp;Ah battery at 80% DoD gives 80&nbsp;Ah usable. We pre-fill a typical value for your battery type \u2014 change it if the maker states otherwise. Only used when capacity is \u201Cas labelled\u201D.',
+    maxContA:'<strong>Max continuous discharge (A)</strong>The steady current the maker says the battery can supply continuously, in amps \u2014 not brief surges. We multiply it by nominal voltage to show continuous power in watts.',
+    peak:'<strong>Peak / surge rating</strong>The higher current the battery can deliver for a short burst, and how long it can hold it. Two numbers: peak current (amps) and peak duration (seconds). Used to check whether it can start a high-draw load like a pump, motor or inverter.',
+    mass:'<strong>Mass (kg)</strong>The battery\u2019s weight from the label or spec sheet, in kilograms. We use it for energy density by weight \u2014 watt-hours per kilogram (Wh/kg).',
+    dims:'<strong>Dimensions (mm)</strong>The outside length, width and height in millimetres. We multiply them for volume, then energy density by volume (Wh/L), and to check it fits your space.'
+  };
+  function place(btn){
+    const r=btn.getBoundingClientRect(), pw=pop.offsetWidth, ph=pop.offsetHeight, m=8;
+    let left=Math.min(r.left, window.innerWidth-pw-m); if(left<m) left=m;
+    let top=r.bottom+6; if(top+ph>window.innerHeight-m) top=Math.max(m, r.top-ph-6);
+    pop.style.left=left+'px'; pop.style.top=top+'px';
+  }
+  document.addEventListener('click',e=>{
+    const btn=e.target.closest('.info-btn');
+    if(btn){
+      e.preventDefault();
+      const key=btn.dataset.info;
+      if(!pop.classList.contains('hidden') && pop.dataset.key===key){ pop.classList.add('hidden'); return; }
+      pop.dataset.key=key; pop.innerHTML=INFO[key]||''; pop.classList.remove('hidden'); place(btn);
+      return;
+    }
+    if(!e.target.closest('#infoPop')) pop.classList.add('hidden');
+  });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') pop.classList.add('hidden'); });
+  window.addEventListener('resize',()=>pop.classList.add('hidden'));
 })();
 </script>
 </body>
