@@ -529,6 +529,7 @@ function render(){
   document.getElementById('cmpBody').hidden = !show;
   document.getElementById('calcHint').textContent =
     !enough ? '' : (revealed ? 'Showing results for your current inputs.' : 'Ready — press Calculate to see your comparison.');
+  renderLongevity();
   if(!show){ document.getElementById('rows').innerHTML=''; return; }
   document.getElementById('hA').textContent=A.name||'Battery A';
   document.getElementById('hB').textContent=B.name||'Battery B';
@@ -602,7 +603,6 @@ function render(){
       <div class="vrow"><span class="vlab">peak current</span>${cell(g.peakA,aOK,'A',0)}</div>
       <div class="vrow"><span class="vlab">peak duration</span>${cell(g.peakSec,sOK,'s',1)}</div></div>`;};
   document.getElementById('verdicts').innerHTML=vd(A)+vd(B);
-  renderLongevity();
 }
 
 document.querySelectorAll('#briefToggle button').forEach(btn=>{
