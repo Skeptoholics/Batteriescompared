@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Battery Normaliser</title>
+<title>Batteries Compared</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -129,10 +129,11 @@
   .terms h4:first-child{margin-top:0}
   .terms p{margin-bottom:2px;color:var(--muted)}
   .terms .acl{color:var(--accent);font-weight:500;margin-top:12px}
-  .gate-btns{display:flex;gap:12px;margin-top:22px}
-  .gate-btns button{flex:1;padding:13px;border-radius:10px;font-family:'IBM Plex Mono',monospace;
+  .gate-btns{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
+  .gate-btns button{flex:1 1 120px;padding:13px;border-radius:10px;font-family:'IBM Plex Mono',monospace;
     font-size:12px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:1px solid}
   .btn-agree{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .btn-more{background:none;color:var(--accent);border-color:var(--accent)}
   .btn-decline{background:none;color:var(--muted);border-color:var(--line-strong)}
   .gate-declined{text-align:center;padding:30px 10px}
   .calcnote{padding:8px 22px;font-size:11px;color:var(--muted);background:var(--surface-2);
@@ -164,30 +165,51 @@
   .emptyState{padding:40px 24px;text-align:center;color:var(--muted);font-size:15px;line-height:1.6}
   .emptyState button{font:inherit;color:var(--accent);background:none;border:none;border-bottom:1px solid var(--accent);
     padding:0 1px;cursor:pointer}
+  .calcrow{display:flex;align-items:center;gap:14px;padding:16px 22px;border-bottom:1px solid var(--line)}
+  .calc-btn{font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.08em;text-transform:uppercase;
+    padding:10px 24px;border:none;border-radius:8px;background:var(--accent);color:#fff;cursor:pointer}
+  .calc-btn:hover{filter:brightness(1.06)}
+  .calc-btn:disabled{background:var(--line-strong);color:var(--faint);cursor:not-allowed}
+  .calchint{font-size:12px;color:var(--muted)}
+  .solrow{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .solrow span{color:var(--muted)}
+  .solrow strong{font-family:'IBM Plex Mono',monospace}
 </style>
 </head>
 <body>
 <div class="gate" id="gate">
   <div class="gate-card">
-    <div class="kicker">Terms of Entry</div>
-    <h2>Before you use this tool</h2>
-    <p class="gate-intro">Selecting <strong>I agree</strong> accepts the terms below. Selecting <strong>I do NOT agree</strong> returns you to your browser.</p>
-    <div class="terms">
-      <p><strong>By entering, you agree to all of the following:</strong></p>
-      <p>1. All data within is contributed freely by users. We take no ownership, authorship, or guarantee of any data herein. We regard ALL information within as unreliable, including every calculation or figure derived from it. Anything you use from this site, including any decision or action you base on it, is solely your responsibility.</p>
-      <p>2. Our role is nothing more than providing a platform where users share and compare data they choose to supply. We do not represent that any of it is manufacturer-supplied information, and it must not be treated as if it were.</p>
-      <p>3. You use this site, and everything on it, entirely at your own risk. To the maximum extent permitted by law, we accept no liability for any loss, damage, misunderstanding, or underperformance arising from it.</p>
-      <p class="acl">Nothing here excludes rights that cannot lawfully be excluded under the Australian Consumer Law. These terms are governed by Queensland law.</p>
+    <div class="kicker">Before you start</div>
+    <h2>A quick acknowledgment before entering this site</h2>
+    <p class="gate-intro">You supply all the data. We only process what you supply.</p>
+    <div class="terms" id="gateMore" hidden>
+      <p>In plain terms: every answer here is worked out only from the figures you enter. We add no information of our own — nothing that couldn't be derived from your own numbers.</p>
+      <p>Some battery calculations are also subjective or ambiguous, with no single "right" answer. That's part of why we don't guarantee any result, and why you should check anything before relying on it.</p>
     </div>
     <div class="gate-btns">
-      <button class="btn-agree" id="agreeBtn">I agree</button>
-      <button class="btn-decline" id="declineBtn">I do NOT agree</button>
+      <button class="btn-agree" id="agreeBtn">I understand</button>
+      <button class="btn-more" id="moreBtn">Tell me more</button>
+      <button class="btn-decline" id="leaveBtn">I'd like to leave</button>
+    </div>
+  </div>
+</div>
+<div class="gate hidden" id="verifyModal">
+  <div class="gate-card">
+    <div class="kicker">Before you rely on these</div>
+    <h2>One thing first</h2>
+    <p class="gate-intro">These figures come only from the numbers you entered, and they can contain mistakes.</p>
+    <div class="terms">
+      <p>I will check these results against my own sources before I rely on them.</p>
+    </div>
+    <div class="gate-btns">
+      <button class="btn-agree" id="verifyOk">I will &mdash; show results</button>
+      <button class="btn-decline" id="verifyCancel">Cancel</button>
     </div>
   </div>
 </div>
 <div class="wrap">
   <header>
-    <div class="kicker">Battery Normaliser · v0.1</div>
+    <div class="kicker">Batteries Compared</div>
     <h1>Compare any two batteries.</h1>
     <p class="sub">Enter each battery's specs as labelled. Everything shown is a calculation based on the values you supply; we don't guarantee the accuracy of any calculation.</p>
   </header>
@@ -196,10 +218,10 @@
     <button class="tab on" data-tab="compare">Compare</button>
     <button class="tab" data-tab="longevity">Endurance</button>
     <button class="tab" data-tab="ev">EV range</button>
+    <button class="tab" data-tab="solar">Solar</button>
   </div>
 
   <div class="exrow" id="exrow">
-    <button type="button" id="loadEx">Load example</button>
     <button type="button" id="clearAll">Clear all</button>
   </div>
 
@@ -213,7 +235,12 @@
         <button data-v="detailed">Detailed</button>
       </div>
     </div>
-    <div class="emptyState" id="emptyState" hidden>Enter both batteries to compare, or <button type="button" id="loadExBtn">load an example</button> to see how it works.</div>
+    <div class="calcrow">
+      <button type="button" id="calcBtn" class="calc-btn">Calculate</button>
+      <span class="calchint" id="calcHint"></span>
+    </div>
+    <div class="emptyState" id="emptyState" hidden>Enter both batteries to compare.</div>
+    <div id="cmpBody" hidden>
     <div class="calcnote">Every figure below is calculated from unverified, user-supplied data.</div>
     <div class="headline" id="headline"></div>
     <table>
@@ -229,13 +256,14 @@
       </div>
       <div class="verdicts" id="verdicts"></div>
     </div>
+    </div>
   </div>
   <div class="out hidden" id="longevityPanel">
     <div class="out-head"><h2>Endurance — runtime &amp; sizing</h2></div>
     <div class="calcnote">Ideal estimate from your figures — ignores inverter/conversion losses, temperature, ageing and voltage sag. Set system efficiency below 100% to derate. Uses each battery's usable Wh.</div>
     <div class="feas">
       <div class="feas-in">
-        <div class="field"><label>Load — power (W)</label><input class="num" id="loadW" type="number" value="100"></div>
+        <div class="field"><label>Load — power (W)</label><input class="num" id="loadW" type="number" placeholder="watts"></div>
         <div class="field"><label>or Amps</label><input class="num" id="loadA" type="number" placeholder="A"></div>
         <div class="field"><label>× Volts</label><input class="num" id="loadV" type="number" placeholder="V"></div>
         <div class="field"><label>System efficiency %</label><input class="num" id="effPct" type="number" value="100"></div>
@@ -256,14 +284,42 @@
     <div class="calcnote">Range is set almost entirely by consumption — which swings 20–40% with speed, terrain, temperature, climate and load. The figure below is ideal from your inputs; plan on a margin, never the ideal. We don't model your vehicle — you supply the consumption, we do the arithmetic.</div>
     <div class="feas">
       <div class="feas-in">
-        <div class="field"><label>Pack capacity (kWh)</label><input class="num" id="evKwh" type="number" value="60"></div>
+        <div class="field"><label>Pack capacity (kWh)</label><input class="num" id="evKwh" type="number" placeholder="kWh"></div>
         <div class="field"><label>Usable window %</label><input class="num" id="evUsable" type="number" value="100"></div>
         <div class="field"><label>Consumption (Wh/<span class="evu">km</span>)</label><input class="num" id="evCons" type="number" placeholder="if known"></div>
         <div class="field"><label>or avg draw (kW)</label><input class="num" id="evDraw" type="number" placeholder="kW"></div>
-        <div class="field"><label>at avg speed (<span class="evu">km</span>/h)</label><input class="num" id="evSpeed" type="number" value="100"></div>
+        <div class="field"><label>at avg speed (<span class="evu">km</span>/h)</label><input class="num" id="evSpeed" type="number" placeholder="speed"></div>
         <div class="field"><label>Planning margin %</label><input class="num" id="evMargin" type="number" value="0"></div>
       </div>
+      <div class="calcrow">
+        <button type="button" id="evCalcBtn" class="calc-btn">Calculate</button>
+        <span class="calchint" id="evHint"></span>
+      </div>
       <div id="evOut"></div>
+    </div>
+  </div>
+
+  <div class="out hidden" id="solarPanel">
+    <div class="out-head">
+      <h2>Solar charging</h2>
+    </div>
+    <div class="calcnote">We add no sun, weather or location data. You tell us the share of rated output your panels are actually producing — full sun, cloud or shade is your call, as a %. Everything below is arithmetic on the figures you enter. Panels and blankets are the same here: a 400&nbsp;W roof panel or a 200&nbsp;W blanket both just enter as watts per unit.</div>
+    <div class="feas">
+      <div class="feas-in">
+        <div class="field"><label>Rated power per unit (W)</label><input class="num" id="solW" type="number" placeholder="watts"></div>
+        <div class="field"><label>Number of units</label><input class="num" id="solN" type="number" placeholder="count"></div>
+        <div class="field"><label>Output now (% of rated)</label><input class="num" id="solSun" type="number" placeholder="% of rated"></div>
+        <div class="field"><label>System efficiency %</label><input class="num" id="solEff" type="number" value="100"></div>
+        <div class="field"><label>Battery bank — usable</label><input class="num" id="solCap" type="number" placeholder="capacity"></div>
+        <div class="field"><label>Unit</label><select id="solCapUnit"><option>kWh</option><option>Wh</option></select></div>
+        <div class="field"><label>Charge now (%)</label><input class="num" id="solSoc" type="number" placeholder="% now"></div>
+        <div class="field"><label>Charge for (h) · optional</label><input class="num" id="solHrs" type="number" placeholder="hours"></div>
+      </div>
+      <div class="calcrow">
+        <button type="button" id="solCalcBtn" class="calc-btn">Calculate</button>
+        <span class="calchint" id="solHint"></span>
+      </div>
+      <div id="solarOut"></div>
     </div>
   </div>
     <button class="terms-toggle" id="termsToggle" aria-expanded="false">
@@ -360,24 +416,27 @@ function blankBattery(){return{name:'',partNo:'',mfgDate:'',genericName:'',chemi
   capacityBasis:'nameplate',dodPct:80,maxContDischargeA:null,peakA:null,peakSec:null,
   cyc80:null,massKg:null,L:null,W:null,H:null,country:'',price:'',url:''};}
 const state={A:blankBattery(),B:blankBattery()};
+let revealed=false;
+let revealedEv=false;
+let revealedSol=false;
 
 function fieldHTML(side,s){
   const chemOpts=Object.keys(CHEMISTRY).map(k=>`<option value="${k}" ${s.chemistry===k?'selected':''}>${k}</option>`).join('');
   return `
-   <div class="field"><label>Manufacturer name · required</label><input data-s="${side}" data-k="name" value="${esc(s.name)}" placeholder="e.g. Foxfound 3000 xVolt"></div>
+   <div class="field"><label>Manufacturer name · required</label><input data-s="${side}" data-k="name" value="${esc(s.name)}" placeholder="maker / brand"></div>
    <div class="row2">
      <div class="field"><label>Part number</label><input data-s="${side}" data-k="partNo" value="${esc(s.partNo)}" placeholder="model / SKU"></div>
      <div class="field"><label>Mfg date (yr-mo)</label><input type="month" data-s="${side}" data-k="mfgDate" value="${s.mfgDate||''}"></div>
    </div>
-   <div class="field"><label>Generic name</label><input data-s="${side}" data-k="genericName" value="${esc(s.genericName)}" placeholder="e.g. 12V 300Ah LFP"></div>
+   <div class="field"><label>Generic name</label><input data-s="${side}" data-k="genericName" value="${esc(s.genericName)}" placeholder="short description"></div>
    <div class="field"><label>Chemistry</label><select data-s="${side}" data-k="chemistry">${chemOpts}</select></div>
    <div class="row3">
-     <div class="field"><label>Nominal V</label><input class="num" data-s="${side}" data-k="nominalV" type="number" value="${s.nominalV??''}" placeholder="e.g. 12.8"></div>
-     <div class="field"><label>Full-charge V</label><input class="num" data-s="${side}" data-k="fullChargeV" type="number" value="${s.fullChargeV??''}" placeholder="e.g. 14.6"></div>
-     <div class="field"><label>Cut-out V</label><input class="num" data-s="${side}" data-k="cutoutV" type="number" value="${s.cutoutV??''}" placeholder="e.g. 10"></div>
+     <div class="field"><label>Nominal V</label><input class="num" data-s="${side}" data-k="nominalV" type="number" value="${s.nominalV??''}" placeholder="volts"></div>
+     <div class="field"><label>Full-charge V</label><input class="num" data-s="${side}" data-k="fullChargeV" type="number" value="${s.fullChargeV??''}" placeholder="volts"></div>
+     <div class="field"><label>Cut-out V</label><input class="num" data-s="${side}" data-k="cutoutV" type="number" value="${s.cutoutV??''}" placeholder="volts"></div>
    </div>
    <div class="row2">
-     <div class="field"><label>Capacity · as labelled</label><input class="num" data-s="${side}" data-k="capVal" type="number" value="${s.capVal??''}" placeholder="e.g. 300"></div>
+     <div class="field"><label>Capacity · as labelled</label><input class="num" data-s="${side}" data-k="capVal" type="number" value="${s.capVal??''}" placeholder="as labelled"></div>
      <div class="field"><label>Unit</label><select data-s="${side}" data-k="capUnit"><option ${s.capUnit==='Wh'?'selected':''}>Wh</option><option ${s.capUnit==='Ah'?'selected':''}>Ah</option><option ${s.capUnit==='mAh'?'selected':''}>mAh</option></select></div>
    </div>
    <div class="row2">
@@ -387,23 +446,23 @@ function fieldHTML(side,s){
        : `<div class="field"><label>Usable DoD % · assumed, editable</label><input class="num" data-s="${side}" data-k="dodPct" type="number" value="${s.dodPct}"></div>`}
    </div>
    <div class="row2">
-     <div class="field"><label>Max cont. discharge A</label><input class="num" data-s="${side}" data-k="maxContDischargeA" type="number" value="${s.maxContDischargeA??''}" placeholder="e.g. 100"></div>
-     <div class="field"><label>Cycle life @80%</label><input class="num" data-s="${side}" data-k="cyc80" type="number" value="${s.cyc80??''}" placeholder="e.g. 4000"></div>
+     <div class="field"><label>Max cont. discharge A</label><input class="num" data-s="${side}" data-k="maxContDischargeA" type="number" value="${s.maxContDischargeA??''}" placeholder="amps"></div>
+     <div class="field"><label>Cycle life @80%</label><input class="num" data-s="${side}" data-k="cyc80" type="number" value="${s.cyc80??''}" placeholder="cycles"></div>
    </div>
    <div class="row2">
-     <div class="field"><label>Peak current A</label><input class="num" data-s="${side}" data-k="peakA" type="number" value="${s.peakA??''}" placeholder="e.g. 200"></div>
-     <div class="field"><label>Peak duration s</label><input class="num" data-s="${side}" data-k="peakSec" type="number" value="${s.peakSec??''}" placeholder="e.g. 5"></div>
+     <div class="field"><label>Peak current A</label><input class="num" data-s="${side}" data-k="peakA" type="number" value="${s.peakA??''}" placeholder="amps"></div>
+     <div class="field"><label>Peak duration s</label><input class="num" data-s="${side}" data-k="peakSec" type="number" value="${s.peakSec??''}" placeholder="seconds"></div>
    </div>
    <div class="row3">
-     <div class="field"><label>Length mm</label><input class="num" data-s="${side}" data-k="L" type="number" value="${s.L??''}" placeholder="e.g. 370"></div>
-     <div class="field"><label>Width mm</label><input class="num" data-s="${side}" data-k="W" type="number" value="${s.W??''}" placeholder="e.g. 190"></div>
-     <div class="field"><label>Height mm</label><input class="num" data-s="${side}" data-k="H" type="number" value="${s.H??''}" placeholder="e.g. 250"></div>
+     <div class="field"><label>Length mm</label><input class="num" data-s="${side}" data-k="L" type="number" value="${s.L??''}" placeholder="mm"></div>
+     <div class="field"><label>Width mm</label><input class="num" data-s="${side}" data-k="W" type="number" value="${s.W??''}" placeholder="mm"></div>
+     <div class="field"><label>Height mm</label><input class="num" data-s="${side}" data-k="H" type="number" value="${s.H??''}" placeholder="mm"></div>
    </div>
-   <div class="field"><label>Mass kg</label><input class="num" data-s="${side}" data-k="massKg" type="number" value="${s.massKg??''}" placeholder="e.g. 25"></div>
+   <div class="field"><label>Mass kg</label><input class="num" data-s="${side}" data-k="massKg" type="number" value="${s.massKg??''}" placeholder="kg"></div>
    <div class="srcgroup">
      <div class="row2">
-       <div class="field"><label>Country found</label><input data-s="${side}" data-k="country" value="${esc(s.country)}" placeholder="e.g. Australia"></div>
-       <div class="field"><label>Price found</label><input data-s="${side}" data-k="price" value="${esc(s.price)}" placeholder="e.g. AUD 899"></div>
+       <div class="field"><label>Country found</label><input data-s="${side}" data-k="country" value="${esc(s.country)}" placeholder="country"></div>
+       <div class="field"><label>Price found</label><input data-s="${side}" data-k="price" value="${esc(s.price)}" placeholder="as found"></div>
      </div>
      <div class="field"><label>Source link (mfr / retailer)</label><input data-s="${side}" data-k="url" value="${esc(s.url)}" placeholder="https://..."></div>
    </div>`;
@@ -421,6 +480,7 @@ function buildInputs(){
       if(['nominalV','fullChargeV','cutoutV','capVal','dodPct','maxContDischargeA','peakA','peakSec','cyc80','massKg','L','W','H'].includes(k))
         val=val===''?null:parseFloat(val);
       state[s][k]=val;
+      revealed=false;
       if(k==='chemistry'){ state[s].dodPct=Math.round(CHEMISTRY[val].dod*100); buildInputs(); }
       if(k==='capacityBasis'){ buildInputs(); }
       render();
@@ -449,14 +509,27 @@ function toEngine(s){
 }
 const f=(x,d=0)=> x==null?'—':(Math.round(x*Math.pow(10,d))/Math.pow(10,d)).toLocaleString();
 const capLabelled=g=> g.capVal!=null ? (f(g.capVal)+' '+g.capUnit) : '\u2014';
+function ageFrom(m){
+  if(!m||!/^\d{4}-\d{2}$/.test(m)) return '\u2014';
+  const [y,mo]=m.split('-').map(Number);
+  const now=new Date();
+  let months=(now.getFullYear()-y)*12+(now.getMonth()+1-mo);
+  if(months<0) return '\u2014';
+  if(months<1) return '<1 mo';
+  const yr=Math.floor(months/12), rem=months%12;
+  return ((yr?yr+' yr ':'')+(rem?rem+' mo':(yr?'':'0 mo'))).trim();
+}
 
 function render(){
   const A=toEngine(state.A), B=toEngine(state.B);
-  const bothEmpty = A.usableWh==null && B.usableWh==null;
-  const cp=document.getElementById('comparePanel');
-  document.getElementById('emptyState').hidden = !bothEmpty;
-  ['.calcnote','.headline','table','.feas'].forEach(sel=>{const el=cp.querySelector(sel); if(el) el.style.display = bothEmpty?'none':'';});
-  if(bothEmpty){ document.getElementById('rows').innerHTML=''; return; }
+  const enough = A.usableWh!=null && B.usableWh!=null;
+  const show = enough && revealed;
+  document.getElementById('calcBtn').disabled = !enough;
+  document.getElementById('emptyState').hidden = enough;
+  document.getElementById('cmpBody').hidden = !show;
+  document.getElementById('calcHint').textContent =
+    !enough ? '' : (revealed ? 'Showing results for your current inputs.' : 'Ready — press Calculate to see your comparison.');
+  if(!show){ document.getElementById('rows').innerHTML=''; return; }
   document.getElementById('hA').textContent=A.name||'Battery A';
   document.getElementById('hB').textContent=B.name||'Battery B';
   document.getElementById('class-A').textContent=deriveClass(A);
@@ -494,6 +567,7 @@ function render(){
     // detailed
     ['Part number', esc(A.partNo)||'\u2014', esc(B.partNo)||'\u2014', true],
     ['Mfg date', esc(A.mfgDate)||'\u2014', esc(B.mfgDate)||'\u2014', true],
+    ['Age (from mfg date)', ageFrom(A.mfgDate), ageFrom(B.mfgDate), true],
     ['Generic name (typed)', esc(A.genericName)||'\u2014', esc(B.genericName)||'\u2014', true],
     ['Class (derived)', deriveClass(A), deriveClass(B), true],
     ['Capacity as labelled', capLabelled(A), capLabelled(B), true],
@@ -580,16 +654,20 @@ document.querySelectorAll('.tab').forEach(tab=>{
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
     tab.classList.add('on');
     const t=tab.dataset.tab;
-    document.getElementById('inputs').classList.toggle('hidden', t==='ev');
-    document.getElementById('exrow').classList.toggle('hidden', t==='ev');
+    document.getElementById('inputs').classList.toggle('hidden', t==='ev'||t==='solar');
+    document.getElementById('exrow').classList.toggle('hidden', t==='ev'||t==='solar');
     document.getElementById('comparePanel').classList.toggle('hidden', t!=='compare');
     document.getElementById('longevityPanel').classList.toggle('hidden', t!=='longevity');
     document.getElementById('evPanel').classList.toggle('hidden', t!=='ev');
+    document.getElementById('solarPanel').classList.toggle('hidden', t!=='solar');
   });
 });
 
 /* ---------- EV RANGE ---------- */
 function renderEV(){
+  document.getElementById('evOut').hidden = !revealedEv;
+  document.getElementById('evHint').textContent = revealedEv ? 'Showing results for your current inputs.' : 'Press Calculate to see your range.';
+  if(!revealedEv) return;
   const unit=document.querySelector('#evUnit .on').dataset.u;
   const num=id=>parseFloat(document.getElementById(id).value);
   const kwh=num('evKwh'), usablePct=isFinite(num('evUsable'))?num('evUsable'):100;
@@ -612,7 +690,8 @@ function renderEV(){
   document.getElementById('evOut').innerHTML=`<div class="vd">${rows}</div>`;
 }
 ['evKwh','evUsable','evCons','evDraw','evSpeed','evMargin'].forEach(id=>
-  document.getElementById(id).addEventListener('input',renderEV));
+  document.getElementById(id).addEventListener('input',()=>{ revealedEv=false; renderEV(); }));
+document.getElementById('evCalcBtn').addEventListener('click',()=>openVerify(()=>{ revealedEv=true; renderEV(); }));
 let evU='km';
 document.querySelectorAll('#evUnit button').forEach(b=>{
   b.addEventListener('click',()=>{
@@ -634,11 +713,53 @@ document.querySelectorAll('#evUnit button').forEach(b=>{
 });
 renderEV();
 
-function fillExample(){ state.A={...DEMO.A}; state.B={...DEMO.B}; buildInputs(); render(); }
-function clearAll(){ state.A=blankBattery(); state.B=blankBattery(); buildInputs(); render(); }
-document.getElementById('loadEx').addEventListener('click',fillExample);
+function renderSolar(){
+  document.getElementById('solarOut').hidden = !revealedSol;
+  document.getElementById('solHint').textContent = revealedSol ? 'Showing results for your current inputs.' : 'Press Calculate to see your charge figures.';
+  if(!revealedSol) return;
+  const num=id=>{const v=parseFloat(document.getElementById(id).value); return isFinite(v)?v:null;};
+  const W=num('solW'), N=num('solN'), sun=num('solSun'), eff=num('solEff');
+  const capV=num('solCap'), capUnit=document.getElementById('solCapUnit').value, soc=num('solSoc'), hrs=num('solHrs');
+  const capWh = capV==null?null:(capUnit==='kWh'?capV*1000:capV);
+  const effW = (W!=null&&N!=null&&sun!=null) ? W*N*(sun/100)*((eff==null?100:eff)/100) : null;
+  const line=(label,val)=>`<div class="solrow"><span>${label}</span><strong>${val}</strong></div>`;
+  let html=`<div class="headline">Effective output: <strong>${f(effW)} W</strong></div>`;
+  if(effW==null){
+    html+=`<p class="note">Enter rated power, number of units and output % to get a figure.</p>`;
+  } else {
+    if(hrs!=null) html+=line('Energy produced in '+f(hrs,1)+' h', f(effW*hrs)+' Wh');
+    const start = soc!=null?Math.max(0,Math.min(100,soc)):null;
+    if(effW>0 && capWh!=null){
+      const s0 = start==null?0:start;
+      const tFull = (capWh*(1-s0/100))/effW;
+      html+=line('Time to full'+(start!=null?(' from '+f(s0)+'%'):' from empty'), f(tFull,1)+' h');
+    }
+    if(capWh!=null && capWh>0 && hrs!=null){
+      const s0 = start==null?0:start;
+      const end = Math.min(100, s0+(effW*hrs/capWh)*100);
+      html+=line('Charge after '+f(hrs,1)+' h'+(start!=null?(' from '+f(s0)+'%'):''), f(end)+'%'+(end>=100?' · full':''));
+    }
+  }
+  document.getElementById('solarOut').innerHTML=html;
+}
+['solW','solN','solSun','solEff','solCap','solCapUnit','solSoc','solHrs'].forEach(id=>
+  document.getElementById(id).addEventListener('input',()=>{ revealedSol=false; renderSolar(); }));
+document.getElementById('solCalcBtn').addEventListener('click',()=>openVerify(()=>{ revealedSol=true; renderSolar(); }));
+renderSolar();
+
+function clearAll(){ state.A=blankBattery(); state.B=blankBattery(); revealed=false; buildInputs(); render(); }
+
+const verifyModal=document.getElementById('verifyModal');
+let pendingReveal=null;
+function openVerify(fn){ pendingReveal=fn; verifyModal.classList.remove('hidden'); document.body.style.overflow='hidden'; }
+function closeVerify(){ verifyModal.classList.add('hidden'); document.body.style.overflow=''; }
+document.getElementById('verifyOk').addEventListener('click',()=>{ const fn=pendingReveal; pendingReveal=null; closeVerify(); if(fn) fn(); });
+document.getElementById('verifyCancel').addEventListener('click',()=>{ pendingReveal=null; closeVerify(); });
+document.getElementById('calcBtn').addEventListener('click',()=>{
+  if(document.getElementById('calcBtn').disabled) return;
+  openVerify(()=>{ revealed=true; render(); });
+});
 document.getElementById('clearAll').addEventListener('click',clearAll);
-document.getElementById('loadExBtn').addEventListener('click',fillExample);
 
 buildInputs(); render();
 
@@ -649,18 +770,23 @@ buildInputs(); render();
   document.getElementById('agreeBtn').addEventListener('click',()=>{
     gate.classList.add('hidden'); document.body.style.overflow='';
   });
-  document.getElementById('declineBtn').addEventListener('click',()=>{
+  const more=document.getElementById('gateMore'), moreBtn=document.getElementById('moreBtn');
+  moreBtn.addEventListener('click',()=>{
+    if(more.hasAttribute('hidden')){ more.removeAttribute('hidden'); moreBtn.textContent='Show less'; }
+    else { more.setAttribute('hidden',''); moreBtn.textContent='Tell me more'; }
+  });
+  document.getElementById('leaveBtn').addEventListener('click',()=>{
     try{ window.history.back(); }catch(e){}
     try{ window.close(); }catch(e){}
     setTimeout(()=>{
       gate.querySelector('.gate-card').innerHTML=
-        '<div class="gate-declined"><div class="kicker">Terms of Entry</div>'
-        +'<h2>Terms not accepted</h2>'
-        +'<p class="gate-intro">You can\u2019t use this tool without accepting the terms. '
-        +'Close this tab to leave, or review the terms again.</p>'
-        +'<div class="gate-btns"><button class="btn-agree" id="reBtn">Review terms again</button></div></div>';
+        '<div class="kicker">Before you start</div>'
+        +'<h2>No problem</h2>'
+        +'<p class="gate-intro">You can close this tab to leave. '
+        +'If you change your mind, you\u2019re welcome back any time.</p>'
+        +'<div class="gate-btns"><button class="btn-agree" id="reBtn">Actually, let me in</button></div>';
       document.getElementById('reBtn').addEventListener('click',()=>location.reload());
-    },350);
+    },300);
   });
 })();
 
